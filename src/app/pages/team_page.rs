@@ -1,4 +1,4 @@
-use crate::app::components::{AddPersonModal, Header};
+use crate::app::components::{AddPersonModal, Header, Toast, ToastMessage};
 use leptos::prelude::*;
 use leptos::*; // required for ElementChild trait
 #[component]
@@ -9,8 +9,8 @@ pub fn Teampage() -> impl IntoView {
     let (if_show_modal, set_if_show_modal) = create_signal(false);
 
     // for showing/animating the toast message
-    // let (if_show_toast, set_if_show_toast) = create_signal(false);
-    /*   let (toast_message, set_toast_message) = create_signal(ToastMessage::new()); */
+    let (if_show_toast, set_if_show_toast) = create_signal(false);
+    let (toast_message, set_toast_message) = create_signal(ToastMessage::new());
     let on_click = move |_| {
         set_if_show_modal(!if_show_modal());
     };
@@ -19,13 +19,16 @@ pub fn Teampage() -> impl IntoView {
         <div class="overflow-x-hidden min-h-screen bg-gray-900">
             <Header />
             <div class="justify-center items-center mx-auto w-full max-w-[64rem] align-center">
-
+                <Toast toast_message if_appear=if_show_toast set_if_appear=set_if_show_toast />
                 <div class="mt-20" style="margin-top: 4rem;">
                     <div class="flex flex-col justify-center items-center mx-auto w-full text-white z-25">
 
                         <Show when=move || { if_show_modal() }>
-                            <AddPersonModal set_if_show_modal />
-
+                            <AddPersonModal
+                                set_if_show_modal
+                                set_if_show_added=set_if_show_toast
+                                set_toast_message
+                            />
                         </Show>
                         <div class="flex flex-row w-full max-w-[52rem]">
                             <div class="pr-4 mt-4 text-xl">"Memebers"</div>

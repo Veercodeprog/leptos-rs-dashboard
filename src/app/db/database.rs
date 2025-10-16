@@ -15,7 +15,8 @@ cfg_if::cfg_if! {
                 username: "Root",
                 password:"Root",
             }).await;
-            DB.use_ns("Surreal").use_db("person ").await;
+                        let _ = DB.use_ns("surreal").use_db("person").await;
+
         }
         pub async fn get_all_persons() -> Option<Vec<Person>> {
 

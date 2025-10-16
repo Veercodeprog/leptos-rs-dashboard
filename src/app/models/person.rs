@@ -10,7 +10,7 @@ pub struct Person {
     pub title: String,
     #[validate(length(min = 1, message = "name is required"))]
     pub level: String,
-    #[validate(range(min = 2000, max = 99999))]
+    #[validate(range(min = 0, max = 999999999))]
     pub compensation: i32,
     pub joined_date: String,
 }

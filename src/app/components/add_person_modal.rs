@@ -1,10 +1,18 @@
+use crate::app::components::{Toast, ToastMessage, ToastMessageType};
 use crate::app::models::person::{AddPersonRequest, Person};
 use crate::app::server_functions::persons::add_person;
+use leptos::leptos_dom::logging::console_log;
 use leptos::prelude::*;
+use leptos::task::spawn_local;
+
 use leptos::*;
 use validator::Validate;
 #[component]
-pub fn AddPersonModal(set_if_show_modal: WriteSignal<bool>) -> impl IntoView {
+pub fn AddPersonModal(
+    set_if_show_modal: WriteSignal<bool>,
+    set_if_show_added: WriteSignal<bool>,
+    set_toast_message: WriteSignal<ToastMessage>,
+) -> impl IntoView {
     const INPUT_STYLE : &str = "w-full h-12 bg-[#333333] pr-4 pl-6 py-4 text-white mt-6 outline-none focus:outline-none focus:pl-7 transition-all duration-1000 ease-in-out";
     const CANCEL_BUTTON_STYLE: &str = "mt-10 bg-[#555555] px-8 py-2 rounded
         text-white mr-3 transition-all duration-1000 ease-in-out hover:bg-[#666666]";
@@ -33,42 +41,73 @@ pub fn AddPersonModal(set_if_show_modal: WriteSignal<bool>) -> impl IntoView {
 
     // to add the new person
     let on_click = move |_| {
+        let parsed_compensation = match compensation().trim().parse::<i32>() {
+            Ok(num) => num,
+            Err(_) => {
+                set_if_error(true);
+                set_error_message(String::from("Compensation must be a valid number"));
+                return;
+            }
+        };
+        console_log(&format!("Parsed compensation: {}", parsed_compensation));
+
         let add_person_request = AddPersonRequest::new(
             person_name(),
             person_title(),
             person_level(),
-            compensation().parse::<i32>().expect("Numbers only"),
+            parsed_compensation,
         );
 
         let is_valid = add_person_request.validate();
 
-        // match is_valid {
-        //     Ok(_) => {
-        //         spawn_local(async move {
-        //             let add_result = add_person(add_person_request).await;
-        //
-        //             // we get the result back and do something with it
-        //             match add_result {
-        //                 Ok(_added_person) => {
-        //                     set_if_show_modal(false);
-        //
-        //                     // set_toast_message(ToastMessage::create(
-        //                     //     ToastMessageType::NewMemberAdded,
-        //                     // ));
-        //                     //
-        //                     // setting this to true to make the toast
-        //                     // for "new member added" appear
-        //                     // set_if_show_added(true);
-        //                 }
-        //                 Err(e) => println!("Error adding: {:?}", e),
-        //             };
-        //         });
-        //     }
-        //     Err(_) => {
-        //         set_if_error(true);
-        //         set_error_message(String::from("All fields are required"))
-        //     }
-        // }
+        match is_valid {
+            Ok(_) => {
+                spawn_local(async move {
+                    let add_result = add_person(add_person_request).await;
+
+                    // we get the result back and do something with it
+                    match add_result {
+                        Ok(_added_person) => {
+                            set_if_show_modal(false);
+
+                            set_toast_message(ToastMessage::create(
+                                ToastMessageType::NewMemberAdded,
+                            ));
+                            //
+                            // setting this to true to make the toast
+                            // for "new member added" appear
+                            set_if_show_added(true);
+                        }
+                        Err(e) => println!("Error adding: {:?}", e),
+                    };
+                });
+            }
+            Err(validation_errors) => {
+                set_if_error(true);
+
+                // Extract field errors and create a meaningful error message
+                let mut error_messages = Vec::new();
+
+                for (field, errors) in validation_errors.field_errors() {
+                    for error in errors {
+                        let message = error
+                            .message
+                            .as_ref()
+                            .map(|m| m.to_string())
+                            .unwrap_or_else(|| format!("{} is invalid", field));
+                        error_messages.push(message);
+                    }
+                }
+
+                let final_message = if error_messages.is_empty() {
+                    String::from("Validation failed")
+                } else {
+                    error_messages.join(", ")
+                };
+
+                set_error_message(final_message);
+            }
+        }
     };
 
     view! {
