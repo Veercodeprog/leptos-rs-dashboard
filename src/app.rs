@@ -2,6 +2,7 @@ pub mod components;
 pub mod db;
 pub mod models;
 pub mod pages;
+pub mod utils;
 use pages::{Homepage, Teampage};
 pub mod server_functions;
 use leptos::prelude::*;
@@ -17,32 +18,35 @@ pub fn App() -> impl IntoView {
     provide_meta_context();
 
     view! {
-            // injects a stylesheet into the document <head>
-            // id=leptos means cargo-leptos will hot-reload this stylesheet
-            <Stylesheet id="leptos" href="/pkg/lmscss"/>
-        <link data-trunk rel="tailwind-css" href="/style/input.css"/>
-            // sets the document title
-            <Title text="LMS app"/>
+        // injects a stylesheet into the document <head>
+        // id=leptos means cargo-leptos will hot-reload this stylesheet
+        <Stylesheet id="leptos" href="/pkg/lms.css" />
+        <link data-trunk rel="tailwind-css" href="/style/input.css" />
+        // sets the document title
+        <Title text="LMS app" />
 
-            // content for this welcome page
-            <Router>
-                <main>
-                    <Routes fallback=move || "Not found.">
-                        <Route path=StaticSegment("/") view=move ||{
-    view!{
-        <Homepage />
+        // content for this welcome page
+        <Router>
+            <main>
+
+                <Routes fallback=move || "Not found.">
+                    <Route
+                        path=StaticSegment("/")
+                        view=move || {
+                            view! { <Homepage /> }
+                        }
+                    />
+                    <Route
+                        path=StaticSegment("/team")
+                        view=move || {
+                            view! { <Teampage /> }
+                        }
+                    />
+                    <Route path=WildcardSegment("any") view=NotFound />
+                </Routes>
+            </main>
+        </Router>
     }
-        }/>
-        <Route path=StaticSegment("/team") view=move ||{
-    view!{
-        <Teampage />
-    }
-        }/>
-                        <Route path=WildcardSegment("any") view=NotFound/>
-                    </Routes>
-                </main>
-            </Router>
-        }
 }
 
 /// Renders the home page of your application.
@@ -75,7 +79,5 @@ fn NotFound() -> impl IntoView {
         resp.set_status(actix_web::http::StatusCode::NOT_FOUND);
     }
 
-    view! {
-        <h1>"Not Found"</h1>
-    }
+    view! { <h1>"Not Found"</h1> }
 }
